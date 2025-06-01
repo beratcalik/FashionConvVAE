@@ -330,7 +330,7 @@ Aşağıdaki tablo, test set üzerindeki sınıflandırma sonuçlarının karş�
 | **Total** | 874    | 967    | 813    | 892    | 882    | 750    | 888    | 961    | 880    | 997    | 9123  |
 
 ## Discussion
-Başarılar
+### Başarılar
 
 Convolutional mimari, tam bağlantılı VAE’ye kıyasla çok daha net rekonstrüksiyonlar sundu.
 
