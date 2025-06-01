@@ -127,7 +127,7 @@ class ConvVAE(nn.Module):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
-'''
+```
 ## Kayıp Fonksiyonu
 
 ### Reconstruction Loss (Binary Cross-Entropy)
@@ -141,6 +141,7 @@ import torch.nn.functional as F
 # recon_x: model.decode(z) çıktısı (28×28 boyutunda, sigmoid ile [0,1] aralığında)
 # x: orijinal giriş görüntüsü
 BCE = F.binary_cross_entropy(recon_x, x, reduction="sum")
+```
 
 ### Kullback–Leibler Divergence (KLD)
 
@@ -155,6 +156,7 @@ Burada:
 # mu: [batch, latent_dim] boyutunda ortalama vektörü
 # logvar: [batch, latent_dim] boyutunda log varyans vektörü
 KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+```
 
 ### Toplam Loss
 
@@ -173,6 +175,7 @@ def loss_function(recon_x, x, mu, logvar):
     # Kullback–Leibler Divergence
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
+```
 
 ### Eğitim Prosedürü
 
@@ -213,6 +216,7 @@ for epoch in range(1, epochs + 1):
     avg_test_loss = test_loss / len(test_loader.dataset)
 
     print(f"Epoch {epoch}: Train loss {avg_train_loss:.2f}, Test loss {avg_test_loss:.2f}")
+```
 Downstream Görev: Latent Özelliklerle Sınıflandırma
 Eğitilmiş ConvVAE modelinin encoder’ından çıkarılan 
 𝜇
@@ -234,7 +238,7 @@ Eğitilmiş modeli yükleme:
 model = ConvVAE(latent_dim=32).to(device)
 model.load_state_dict(torch.load("src/checkpoints/convvae_fashionmnist.pth", map_location=device))
 model.eval()
-'''
+```
 Latent Çıkarımı:
 ```python
 import numpy as np
@@ -252,7 +256,7 @@ def extract_latent(loader):
 
 X_train, y_train = extract_latent(train_loader)
 X_test,  y_test  = extract_latent(test_loader)
-'''
+```
 Random Forest Eğitimi ve Değerlendirme:
 ```python
 from sklearn.ensemble import RandomForestClassifier
@@ -264,7 +268,7 @@ preds = clf.predict(X_test)
 acc = accuracy_score(y_test, preds)
 print(f"Classification accuracy: {acc*100:.2f}%")
 cm = confusion_matrix(y_test, preds)
-'''
+```
 Performans:
 
 Latent boyut = 16 ile denemede %84.01 doğruluk elde edildi.
