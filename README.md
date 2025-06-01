@@ -127,7 +127,7 @@ class ConvVAE(nn.Module):
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
-
+'''
 ## Kayıp Fonksiyonu
 
 ### Reconstruction Loss (Binary Cross-Entropy)
