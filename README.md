@@ -217,7 +217,7 @@ for epoch in range(1, epochs + 1):
 
     print(f"Epoch {epoch}: Train loss {avg_train_loss:.2f}, Test loss {avg_test_loss:.2f}")
 ```
-Downstream Görev: Latent Özelliklerle Sınıflandırma
+### Downstream Görev: Latent Özelliklerle Sınıflandırma
 Eğitilmiş ConvVAE modelinin encoder’ından çıkarılan 
 𝜇
 (
@@ -233,13 +233,13 @@ Eğitilmiş ConvVAE modelinin encoder’ından çıkarılan
 
 Adımlar:
 
-Eğitilmiş modeli yükleme:
+#### Eğitilmiş modeli yükleme:
 ```python
 model = ConvVAE(latent_dim=32).to(device)
 model.load_state_dict(torch.load("src/checkpoints/convvae_fashionmnist.pth", map_location=device))
 model.eval()
 ```
-Latent Çıkarımı:
+#### Latent Çıkarımı:
 ```python
 import numpy as np
 from torch.utils.data import DataLoader
@@ -257,7 +257,7 @@ def extract_latent(loader):
 X_train, y_train = extract_latent(train_loader)
 X_test,  y_test  = extract_latent(test_loader)
 ```
-Random Forest Eğitimi ve Değerlendirme:
+## Random Forest Eğitimi ve Değerlendirme:
 ```python
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
@@ -269,7 +269,7 @@ acc = accuracy_score(y_test, preds)
 print(f"Classification accuracy: {acc*100:.2f}%")
 cm = confusion_matrix(y_test, preds)
 ```
-Performans:
+## Performans:
 
 Latent boyut = 16 ile denemede %84.01 doğruluk elde edildi.
 
@@ -284,7 +284,7 @@ epoch’ta ≈ 308; sonraki epoch’larda ∼ 236 civarına indi
 
 100 epoch sonunda plateau, eğitim ve test kayıpları birbirine yakın (overfitting az)
 
-Rekonstrüksiyon Örnekleri
+### Rekonstrüksiyon Örnekleri
 
 Üst satır: Test setten alınan orijinal resimler
 
@@ -313,7 +313,7 @@ Doğruluk: %84.01 (latent_dim=16)
 
 Sınıflandırıcı: Random Forest (n_estimators=100)
 
-Karmaşıklık Matrisi
+## Karmaşıklık Matrisi
 Aşağıdaki tablo, test set üzerindeki sınıflandırma sonuçlarının karşılaştırmalı karmaşıklık matrisini göstermektedir (satırlar gerçek sınıflar, sütunlar tahmin edilen sınıflar):
 | True\Pred | Pred_0 | Pred_1 | Pred_2 | Pred_3 | Pred_4 | Pred_5 | Pred_6 | Pred_7 | Pred_8 | Pred_9 | Total |
 |-----------|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|-------|
@@ -329,7 +329,7 @@ Aşağıdaki tablo, test set üzerindeki sınıflandırma sonuçlarının karş�
 | **True_9**    | 4      | 5      | 0      | 3      | 0      | 19     | 1      | 3      | 9      | 913    | 957   |
 | **Total** | 874    | 967    | 813    | 892    | 882    | 750    | 888    | 961    | 880    | 997    | 9123  |
 
-Discussion
+## Discussion
 Başarılar
 
 Convolutional mimari, tam bağlantılı VAE’ye kıyasla çok daha net rekonstrüksiyonlar sundu.
@@ -342,7 +342,7 @@ Daha Derin Mimari
 
 Ek Conv katmanları (ör. 256 filtre), BatchNorm/LeakyReLU eklenebilir.
 
-Eğitim Teknikleri
+### Eğitim Teknikleri
 
 β-VAE (“β>1”) ile KLD’ye ağırlık vererek latent uzayın düzenini iyileştirme.
 
@@ -350,7 +350,7 @@ Eğitim Teknikleri
 
 Epoch sayısını 150–200’e çıkarmak uzun vadeli iyileşmeler sunabilir.
 
-Görsel Kayıp Terimleri
+### Görsel Kayıp Terimleri
 
 Perceptual Loss (VGG tabanlı) veya Feature Matching ekleyerek daha net çıktı sağlama.
 
@@ -358,7 +358,7 @@ Latent Boyut
 
 32→64/128 deneyerek latent uzayın kapasitesini artırma; 2D görselleştirme için ayrı bir modelle t-SNE/PCA analizi yapılabilir.
 
-References
+## References
 D. P. Kingma & M. Welling, “Auto-Encoding Variational Bayes,” ICLR 2014.
 
 Fashion-MNIST dataset, https://github.com/zalandoresearch/fashion-mnist
