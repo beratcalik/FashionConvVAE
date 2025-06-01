@@ -41,69 +41,89 @@ Bu projede, 28×28 gri-ton Fashion-MNIST veri seti üzerinde bir **Convolutional
                            num_workers=4,
                            pin_memory=True)
 
-Model Mimarisi (ConvVAE)
-Encoder
+### Model Mimarisi (ConvVAE)
 
-Conv2d(1, 32, kernel_size=4, stride=2, padding=1) → 28×28 → 14×14
+#### Encoder
+1. **Katman 1**: `Conv2d(1, 32, kernel_size=4, stride=2, padding=1)`  
+   - Girdi: 28×28×1  
+   - Çıktı: 14×14×32  
+2. **Katman 2**: `Conv2d(32, 64, kernel_size=4, stride=2, padding=1)`  
+   - Girdi: 14×14×32  
+   - Çıktı: 7×7×64  
+3. **Katman 3**: `Conv2d(64, 128, kernel_size=4, stride=2, padding=1)`  
+   - Girdi: 7×7×64  
+   - Çıktı: 3×3×128  
+4. **Flatten ve FC Katmanları**  
+   - Çıktı boyutu: 128 × 3 × 3 = 1152  
+   - **μ(x)**: `Linear(1152, latent_dim)`  
+   - **logσ²(x)**: `Linear(1152, latent_dim)`
 
-Conv2d(32, 64, kernel_size=4, stride=2, padding=1) → 14×14 → 7×7
+#### Reparameterization Trick
+\[
+z = \mu(x) + \exp\Bigl(\tfrac{1}{2}\log\sigma^2(x)\Bigr)\,\odot\,\epsilon,\quad
+\epsilon \sim \mathcal{N}(0, I)
+\]
 
-Conv2d(64, 128, kernel_size=4, stride=2, padding=1) → 7×7 → 3×3
+#### Decoder
+1. **FC ve Yeniden Şekillendirme**  
+   - `Linear(latent_dim, 128*3*3)`  
+   - Yeniden şekillendirme: 128×3×3  
+2. **Katman 1**:  
+   `ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, output_padding=1)`  
+   - Girdi: 3×3×128  
+   - Çıktı: 7×7×64  
+3. **Katman 2**:  
+   `ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1)`  
+   - Girdi: 7×7×64  
+   - Çıktı: 14×14×32  
+4. **Katman 3**:  
+   `ConvTranspose2d(32, 1, kernel_size=4, stride=2, padding=1)`  
+   - Girdi: 14×14×32  
+   - Çıktı: 28×28×1  
+   - Aktivasyon: `Sigmoid` (çıktıyı [0,1] aralığına dönüştürür)
 
-Flatten edilmiş çıktı (128 × 3 × 3 = 1152 boyut) iki ayrı tam bağlı katmana (FC) beslenir:
+#### Tam Kod (PyTorch)
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-μ(x): Linear(128*3*3, latent_dim)
+class ConvVAE(nn.Module):
+    def __init__(self, latent_dim=32):
+        super().__init__()
+        # Encoder
+        self.enc1 = nn.Conv2d(1, 32, 4, 2, 1)    # 28→14
+        self.enc2 = nn.Conv2d(32, 64, 4, 2, 1)   # 14→7
+        self.enc3 = nn.Conv2d(64, 128, 4, 2, 1)  # 7→3
+        self.fc_mu  = nn.Linear(128*3*3, latent_dim)
+        self.fc_log = nn.Linear(128*3*3, latent_dim)
 
-logσ²(x): Linear(128*3*3, latent_dim)
+        # Decoder
+        self.fc_dec = nn.Linear(latent_dim, 128*3*3)
+        self.dec1   = nn.ConvTranspose2d(128, 64, 4, 2, 1, output_padding=1)  # 3→7
+        self.dec2   = nn.ConvTranspose2d(64, 32, 4, 2, 1)                       # 7→14
+        self.dec3   = nn.ConvTranspose2d(32, 1, 4, 2, 1)                        # 14→28
 
-Reparameterization Trick
+    def encode(self, x):
+        h = F.relu(self.enc1(x))
+        h = F.relu(self.enc2(h))
+        h = F.relu(self.enc3(h))
+        h = h.view(h.size(0), -1)  # [batch, 128*3*3]
+        return self.fc_mu(h), self.fc_log(h)
 
-𝑧
-=
-𝜇
-(
-𝑥
-)
-+
-exp
-⁡
-(
-1
-2
-log
-⁡
-𝜎
-2
-(
-𝑥
-)
-)
-⊙
-𝜖
-,
-𝜖
-∼
-𝑁
-(
-0
-,
-𝐼
-)
-z=μ(x)+exp( 
-2
-1
-​
- logσ 
-2
- (x))⊙ϵ,ϵ∼N(0,I)
-Decoder
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
 
-Linear(latent_dim, 128*3*3) → yeniden şekillendirme: 128 × 3 × 3
+    def decode(self, z):
+        h = F.relu(self.fc_dec(z))
+        h = h.view(-1, 128, 3, 3)
+        h = F.relu(self.dec1(h))
+        h = F.relu(self.dec2(h))
+        return torch.sigmoid(self.dec3(h))
 
-ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, output_padding=1) → 3×3 → 7×7
-
-ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1) → 7×7 → 14×14
-
-ConvTranspose2d(32, 1, kernel_size=4, stride=2, padding=1) → 14×14 → 28×28
-
-Son katmanda Sigmoid aktivasyonu kullanılarak çıktı [0, 1] aralığında elde edilir.
+    def forward(self, x):
+        mu, logvar = self.encode(x)
+        z = self.reparameterize(mu, logvar)
+        return self.decode(z), mu, logvar
